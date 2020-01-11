@@ -103,6 +103,8 @@ def run_game():
 
         if keys[pygame.K_SPACE]:
             make_jump = True
+        if keys[pygame.K_ESCAPE]:
+            pause()
 
         if make_jump:
             jump()
@@ -111,12 +113,15 @@ def run_game():
         draw_array(cactus_arr)
         move_objects(stone, cloud)
 
-        # pygame.draw.rect(display, (247, 240, 22), (usr_x, usr_y, usr_width, usr_height))
         draw_dino()
+
+        if check_collision(cactus_arr):
+            game = False
 
         pygame.display.update()
 
         clock.tick(80)
+    return game_over()
 
 
 def jump():
@@ -232,4 +237,63 @@ def draw_dino():
     img_counter += 1
 
 
-run_game()
+def print_text(message, x, y, font_color=(0, 0, 0), font_type='images/Effects/PingPong.ttf', font_size=30):
+    font_type = pygame.font.Font(font_type, font_size)
+    text = font_type.render(message, True, font_color)
+    display.blit(text, (x, y))
+
+
+def pause():
+    paused = True
+    while paused:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+        print_text('Paused. Press enter to continue', 160, 300)
+
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_RETURN]:
+            paused = False
+
+        pygame.display.update()
+        clock.tick(15)
+
+
+def check_collision(barriers):
+    for barrier in barriers:
+        if usr_y + usr_height >= barrier.y:
+            if barrier.x <= usr_x <= barrier.x + barrier.width:
+                return True
+            elif barrier.x <= usr_x + usr_width <= barrier.x + barrier.width:
+                return True
+    return False
+
+
+def game_over():
+    stopped = True
+    while stopped:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+        print_text('Game over. Press Enter to play again, Escape to quit.', 100, 300)
+
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_RETURN]:
+            return True
+        if keys[pygame.K_ESCAPE]:
+            return False
+
+        pygame.display.update()
+        clock.tick(15)
+
+
+while run_game():
+    pass
+pygame.quit()
+quit()
