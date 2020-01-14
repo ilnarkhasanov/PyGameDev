@@ -29,11 +29,9 @@ cloud_img = [
 ]
 
 dino_img = [
-    pygame.image.load('images/Dino/Dino0.png'),
-    pygame.image.load('images/Dino/Dino1.png'),
-    pygame.image.load('images/Dino/Dino2.png'),
-    pygame.image.load('images/Dino/Dino3.png'),
-    pygame.image.load('images/Dino/Dino4.png')
+    pygame.image.load('images/updatedDino/dino0.png').convert_alpha(),
+    pygame.image.load('images/updatedDino/dino2.png').convert_alpha(),
+    pygame.image.load('images/updatedDino/dino3.png').convert_alpha()
 ]
 
 img_counter = 0
@@ -79,6 +77,14 @@ clock = pygame.time.Clock()
 make_jump = False
 jump_counter = 30
 
+scores = 0
+max_scores = 0
+above_cactus = False
+
+pygame.mixer.music.load('images/Sounds/Double_the_Bits.mp3')
+pygame.mixer.music.set_volume(0.5)
+pygame.mixer.music.play(1)
+
 
 def run_game():
     global make_jump
@@ -89,7 +95,7 @@ def run_game():
 
     create_cactus_arr(cactus_arr)
 
-    land = pygame.image.load('images/Backgrounds/Land.jpg')
+    land = pygame.image.load('images/Backgrounds/updatedLand.jpg')
 
     stone, cloud = open_random_objects()
 
@@ -109,7 +115,12 @@ def run_game():
         if make_jump:
             jump()
 
+        count_scores(cactus_arr)
+
         display.blit(land, (0, 0))
+
+        print_text("Scores: " + str(scores), 600, 10)
+
         draw_array(cactus_arr)
         move_objects(stone, cloud)
 
@@ -120,7 +131,7 @@ def run_game():
 
         pygame.display.update()
 
-        clock.tick(80)
+        clock.tick(100)
     return game_over()
 
 
@@ -230,14 +241,15 @@ def move_objects(stone, cloud):
 def draw_dino():
     global img_counter
 
-    if img_counter == 25:
+    if img_counter == 9:
         img_counter = 0
 
-    display.blit(dino_img[img_counter // 5], (usr_x, usr_y))
+    display.blit(dino_img[img_counter // 3], (usr_x, usr_y))
     img_counter += 1
 
 
-def print_text(message, x, y, font_color=(0, 0, 0), font_type='images/Effects/PingPong.ttf', font_size=30):
+def print_text(message, x, y, font_color=(0, 0, 0), font_type='images/Effects/MontserratAlternates-SemiBold.ttf',
+               font_size=30):
     font_type = pygame.font.Font(font_type, font_size)
     text = font_type.render(message, True, font_color)
     display.blit(text, (x, y))
@@ -272,7 +284,32 @@ def check_collision(barriers):
     return False
 
 
+def count_scores(barriers):
+    global scores, above_cactus
+
+    if not above_cactus:
+        for barrier in barriers:
+            if barrier.x <= usr_x + usr_width / 2 <= barrier.x + barrier.width:
+                if usr_y + usr_height - 5 <= barrier.y:
+                    above_cactus = True
+                    break
+    else:
+        if jump_counter == -30:
+            scores += 1
+            above_cactus = False
+
+
 def game_over():
+    global scores, max_scores
+
+    if scores > max_scores:
+        max_scores_file = open('system_files/max_score.txt', 'w')
+        max_scores_file.truncate()
+        print(scores, file=max_scores_file)
+        max_scores_file.close()
+
+        max_scores = scores
+
     stopped = True
     while stopped:
         for event in pygame.event.get():
@@ -281,6 +318,12 @@ def game_over():
                 quit()
 
         print_text('Game over. Press Enter to play again, Escape to quit.', 100, 300)
+
+        get_max_scores = open('system_files/max_score.txt', 'r')
+        max_scores = int(get_max_scores.readline())
+        get_max_scores.close()
+
+        print_text('Max scores: ' + str(max_scores), 300, 350)
 
         keys = pygame.key.get_pressed()
 
@@ -294,6 +337,10 @@ def game_over():
 
 
 while run_game():
+    scores = 0
+    make_jump = False
+    jump_counter = 30
+    usr_y = display_height - usr_height - 100
     pass
 pygame.quit()
 quit()
