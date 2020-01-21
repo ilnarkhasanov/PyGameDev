@@ -121,7 +121,7 @@ def startScreen():
 
         display.blit(menu_background, (0, 0))
         start_button.draw(250, 250, 'Start game', start_game)
-        start_button.draw(250, 350, 'kek', settingsScreen)
+        start_button.draw(250, 350, 'Settings', settingsScreen)
         start_button.draw(250, 450, 'Quit game', quitGame)
 
         pygame.display.update()
@@ -431,6 +431,8 @@ def game_over():
         max_scores_file.close()
 
         max_scores = scores
+
+        scores = 0
 
     stopped = True
     while stopped:
