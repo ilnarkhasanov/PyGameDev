@@ -7,12 +7,12 @@ display_width = 800
 display_height = 600
 
 display = pygame.display.set_mode((display_width, display_height))
-pygame.display.set_caption('kek')
+pygame.display.set_caption('Dinosaur runs through the desert and scores points')
 
 cactus_img = [
-    pygame.image.load('images/Objects/Cactus0.png'),
-    pygame.image.load('images/Objects/Cactus1.png'),
-    pygame.image.load('images/Objects/Cactus2.png')
+    pygame.image.load('images/updatedObj/cactus1.png'),
+    pygame.image.load('images/updatedObj/cactus2.png'),
+    pygame.image.load('images/updatedObj/cactus3.png')
 ]
 cactus_options = [
     69, 449, 37, 410, 40, 420
@@ -29,12 +29,114 @@ cloud_img = [
 ]
 
 dino_img = [
-    pygame.image.load('images/updatedDino/dino0.png').convert_alpha(),
+    pygame.image.load('images/updatedDino/dino1.png').convert_alpha(),
     pygame.image.load('images/updatedDino/dino2.png').convert_alpha(),
     pygame.image.load('images/updatedDino/dino3.png').convert_alpha()
 ]
 
 img_counter = 0
+
+button_sound = pygame.mixer.Sound('images/Sounds/button.wav')
+
+pygame.mixer.music.set_volume(0.5)
+
+
+class Button:
+    def __init__(self, width, height, inactive_color="", active_color=""):
+        self.width = width
+        self.height = height
+        self.inactive_color = inactive_color
+        self.active_color = active_color
+
+    def draw(self, x, y, message, action=None):
+        mouse = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()
+
+        if x < mouse[0] < x + self.width:
+            if y < mouse[1] < y + self.height:
+                pygame.draw.rect(display, (200, 200, 200), (x, y, self.width, self.height))
+
+                if click[0] == 1 and action:
+                    pygame.mixer.Sound.play(button_sound)
+                    pygame.time.delay(300)
+
+                    if action is not None:
+                        action()
+        else:
+            pygame.draw.rect(display, (200, 200, 200), (x, y, self.width, self.height))
+
+        print_text(message, x + 10, y + 10)
+
+
+def quitGame():
+    pygame.quit()
+    quit()
+
+
+def setVolumeOff():
+    pygame.mixer.music.set_volume(0)
+
+
+def setVolumeOn():
+    pygame.mixer.music.set_volume(0.5)
+
+
+def settingsScreen():
+    setting_background = pygame.image.load('images/Backgrounds/settings.png')
+
+    show_menu = True
+
+    button = Button(200, 70)
+
+    while show_menu:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+        display.blit(setting_background, (0, 0))
+
+        button.draw(100, 300, 'off', setVolumeOff)
+        button.draw(300, 300, 'sound')
+        button.draw(500, 300, 'on', setVolumeOn)
+
+        button.draw(10, 10, 'back', startScreen)
+
+        pygame.display.update()
+        clock.tick(60)
+
+
+def startScreen():
+    menu_background = pygame.image.load('images/Backgrounds/menu.png')
+
+    start_button = Button(300, 70)
+
+    show_menu = True
+
+    while show_menu:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+        display.blit(menu_background, (0, 0))
+        start_button.draw(250, 250, 'Start game', start_game)
+        start_button.draw(250, 350, 'kek', settingsScreen)
+        start_button.draw(250, 450, 'Quit game', quitGame)
+
+        pygame.display.update()
+        clock.tick(60)
+
+
+def start_game():
+    global scores, make_jump, jump_counter, usr_y
+
+    while game_cycle():
+        scores = 0
+        make_jump = False
+        jump_counter = 30
+        usr_y = display_height - usr_height - 90
+        pass
 
 
 class Object:
@@ -65,7 +167,7 @@ class Object:
 usr_width = 60
 usr_height = 100
 usr_x = display_width // 3
-usr_y = display_height - usr_height - 100
+usr_y = display_height - usr_height - 90
 
 cactus_width = 20
 cactus_height = 70
@@ -79,15 +181,17 @@ jump_counter = 30
 
 scores = 0
 max_scores = 0
-above_cactus = False
+max_above = 0
 
 pygame.mixer.music.load('images/Sounds/Double_the_Bits.mp3')
 pygame.mixer.music.set_volume(0.5)
 pygame.mixer.music.play(1)
 
 
-def run_game():
+def game_cycle():
     global make_jump
+
+    # startScreen()
 
     game = True
 
@@ -98,6 +202,8 @@ def run_game():
     land = pygame.image.load('images/Backgrounds/updatedLand.jpg')
 
     stone, cloud = open_random_objects()
+
+    button = Button(100, 50, (0, 0, 0), (0, 0, 0))
 
     while game:
         for event in pygame.event.get():
@@ -263,7 +369,7 @@ def pause():
                 pygame.quit()
                 quit()
 
-        print_text('Paused. Press enter to continue', 160, 300)
+        print_text('Press Enter to continue', 220, 300)
 
         keys = pygame.key.get_pressed()
 
@@ -285,18 +391,34 @@ def check_collision(barriers):
 
 
 def count_scores(barriers):
-    global scores, above_cactus
+    global scores, max_above
+
+    above_cactus = 0
+
+    if -20 <= jump_counter < 25:
+        for barrier in barriers:
+            if usr_y + usr_height - 5 <= barrier.y:
+                if barrier.x <= usr_x <= barrier.x + barrier.width:
+                    above_cactus += 1
+                elif barrier.x <= usr_x + usr_width <= barrier.x + barrier.width:
+                    above_cactus += 1
+
+        max_above = max(max_above, above_cactus)
+    else:
+        if jump_counter == -30:
+            scores += max_above
+            max_above = 0
 
     if not above_cactus:
         for barrier in barriers:
             if barrier.x <= usr_x + usr_width / 2 <= barrier.x + barrier.width:
                 if usr_y + usr_height - 5 <= barrier.y:
-                    above_cactus = True
+                    # above_cactus = True
                     break
     else:
         if jump_counter == -30:
             scores += 1
-            above_cactus = False
+            # above_cactus = False
 
 
 def game_over():
@@ -317,7 +439,7 @@ def game_over():
                 pygame.quit()
                 quit()
 
-        print_text('Game over. Press Enter to play again, Escape to quit.', 100, 300)
+        print_text('Game over. Enter - play again, Escape - quit.', 50, 300)
 
         get_max_scores = open('system_files/max_score.txt', 'r')
         max_scores = int(get_max_scores.readline())
@@ -336,11 +458,7 @@ def game_over():
         clock.tick(15)
 
 
-while run_game():
-    scores = 0
-    make_jump = False
-    jump_counter = 30
-    usr_y = display_height - usr_height - 100
-    pass
+startScreen()
+
 pygame.quit()
 quit()
